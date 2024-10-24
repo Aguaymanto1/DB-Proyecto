@@ -199,4 +199,3 @@ export const createProduct = async (productData, callback) => {
         client.release();
     }
 };
-*/
