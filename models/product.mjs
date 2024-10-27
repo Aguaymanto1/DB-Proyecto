@@ -134,7 +134,7 @@ export const updateProduct = async (productId, productData, callback) => {
             imageUrl,
             productData.precio,
             productData.stock,
-             productData.tipoProducto,
+            productData.tipoproducto,
             productId
         ];
 
@@ -185,7 +185,7 @@ export const createProduct = async (productData, callback) => {
             imageUrl,
             productData.precio,
             productData.stock
-            productData.tipoProducto
+            productData.tipoproducto
         ];
 
         const res = await client.query(insertQuery, values);
