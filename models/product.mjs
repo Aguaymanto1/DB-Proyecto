@@ -27,9 +27,10 @@ export const updateProduct = async (productId, productData, callback) => {
 
     // La consulta SQL para actualizar el producto incluyendo stock
     const query = `
-    INSERT INTO productos (nombre, descripcion, img, precio, stock, tipoproducto)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING *;
+    UPDATE productos
+        SET nombre = $1, descripcion = $2, img = $3, precio = $4, stock = $5, tipoproducto = $6
+        WHERE id = $7
+        RETURNING *;
 `;
 
 const values = [nombre, descripcion || null, img || null, precio, stock, tipoproducto];
@@ -59,7 +60,7 @@ export const createProduct = async (productData, callback) => {
     // Consulta SQL para insertar un nuevo producto, incluyendo el campo stock y la URL de la imagen
     const query = `
         INSERT INTO productos (nombre, descripcion, img, precio, stock, tipoproducto)
-        VALUES ($1, $2, $3, $4, $5,$6)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *;
     `;
 
