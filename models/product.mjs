@@ -64,7 +64,7 @@ export const createProduct = async (productData, callback) => {
     `;
 
     // Usamos directamente la URL que viene en el campo img
-    const values = [nombre, descripcion || null, img || null, precio, stock];
+    const values = [nombre, descripcion || null, img || null, precio, stock, tipoproducto];
 
     try {
         const res = await pool.query(query, values); // Ejecutamos la consulta
