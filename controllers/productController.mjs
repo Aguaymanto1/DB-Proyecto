@@ -1,61 +1,94 @@
-import * as ProductModel from '../models/product.mjs';
-//import { uploadImageAndGetUrl } from '../service/imgStorage.mjs';
+import * as ProductModel from '../models/products.mjs';
+import { BlobServiceClient } from '@azure/storage-blob';
+import 'dotenv/config';
 
+const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+const containerName = 'appwebimg';
+
+const uploadImageAndGetUrl = async (imageBuffer, imageName) => {
+    const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+
+    const blockBlobClient = containerClient.getBlockBlobClient(imageName);
+    await blockBlobClient.upload(imageBuffer, imageBuffer.length);
+
+    return blockBlobClient.url;
+};
+
+// Obtener todos los productos
 export const getAllProducts = (req, res) => {
     ProductModel.getAllProducts((err, products) => {
         if (err) {
-            console.error('Error fetching products:', err);
-            // En caso de error, devuelve un mensaje de error con código de estado 500
-            return res.status(500).json({ message: 'Error fetching products' });
+            return res.status(500).json({ message: 'Error al obtener los productos' });
         }
-        // Si no hay error, devuelve los productos con código de estado 200
         res.status(200).json(products);
     });
 };
 
-export const updateProduct = (req, res) => {
-    const productId = req.params.id; // El ID del producto a actualizar
-    const productData = req.body; // Los datos del producto a actualizar desde el cuerpo de la solicitud
-
-    // Llamamos al modelo para actualizar el producto
-    ProductModel.updateProduct(productId, productData, (err, updatedProduct) => {
-        if (err) {
-            console.error('Error updating product:', err);
-            return res.status(500).json({ message: 'Error updating product' });
+// Crear un producto nuevo con imagen y tipoProducto
+export const createProduct = async (req, res) => {
+    const productData = req.body;
+    
+    // Subida de imagen si se proporciona
+    if (req.file) {
+        try {
+            productData.img = await uploadImageAndGetUrl(req.file.buffer, req.file.originalname);
+        } catch (error) {
+            return res.status(500).json({ message: 'Error al subir la imagen' });
         }
-        res.status(200).json(updatedProduct); // Devolvemos el producto actualizado
-    });
-};
+    }
 
-// Crear un producto nuevo
-export const createProduct = (req, res) => {
-    const productData = req.body; // Datos del producto desde el cuerpo de la solicitud
+    // Asegúrate de incluir el campo tipoProducto (puede ser 'normal', 'promocion', o 'oferta')
+    productData.tipoProducto = productData.tipoProducto || 'normal';
 
-    // Llamamos al modelo para crear el producto
     ProductModel.createProduct(productData, (err, newProduct) => {
         if (err) {
-            console.error('Error creating product:', err);
-            return res.status(500).json({ message: 'Error creating product' });
+            return res.status(500).json({ message: 'Error al crear el producto' });
         }
-        res.status(201).json(newProduct); // Devolvemos el producto creado
+        res.status(201).json(newProduct);
     });
 };
 
-export const deleteProduct = (req, res) => {
-    const productId = req.params.id; // El ID del producto a eliminar
+// Actualizar un producto existente con imagen y tipoProducto
+export const updateProduct = async (req, res) => {
+    const productId = req.params.id;
+    const productData = req.body;
 
-    // Llamamos al modelo para eliminar el producto
+    // Subida de imagen si se proporciona
+    if (req.file) {
+        try {
+            productData.img = await uploadImageAndGetUrl(req.file.buffer, req.file.originalname);
+        } catch (error) {
+            return res.status(500).json({ message: 'Error al subir la imagen' });
+        }
+    }
+
+    // Asegúrate de incluir el campo tipoProducto
+    productData.tipoProducto = productData.tipoProducto || 'normal';
+
+    ProductModel.updateProduct(productId, productData, (err, updatedProduct) => {
+        if (err) {
+            return res.status(500).json({ message: 'Error al actualizar el producto' });
+        }
+        res.status(200).json(updatedProduct);
+    });
+};
+
+// Eliminar un producto
+export const deleteProduct = (req, res) => {
+    const productId = req.params.id;
+
     ProductModel.deleteProduct(productId, (err, deletedProduct) => {
         if (err) {
-            console.error('Error deleting product:', err);
-            return res.status(500).json({ message: 'Error deleting product' });
+            return res.status(500).json({ message: 'Error al eliminar el producto' });
         }
         if (!deletedProduct) {
-            return res.status(404).json({ message: 'Product not found' });
+            return res.status(404).json({ message: 'Producto no encontrado' });
         }
-        res.status(200).json({ message: 'Product deleted successfully', deletedProduct }); // Devolvemos un mensaje de éxito
+        res.status(200).json({ message: 'Producto eliminado con éxito', deletedProduct });
     });
 };
+
 
 
 /*
